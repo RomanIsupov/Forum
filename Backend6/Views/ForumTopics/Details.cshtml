@@ -1,0 +1,80 @@
+﻿@model Backend6.Models.ForumTopic
+@inject Backend6.Services.IUserPermissionsService userPermissions
+@{
+    ViewData["Title"] = "Details";
+    var canEditTopic = userPermissions.CanEditForumTopic(this.Model);
+}
+
+<h2>@Model.Name</h2>
+
+@if (canEditTopic)
+{
+    <p>
+        <a asp-action="Create" asp-controller="ForumMessages" asp-route-topicId="@Model.Id">Reply</a>
+        | <a asp-action="Edit" asp-controller="ForumTopics" asp-route-id="@Model.Id">Edit</a>
+        | <a asp-action="Delete" asp-controller="ForumTopics" asp-route-id="@Model.Id">Delete</a>
+        | <a asp-action="Details" asp-controller="Forums" asp-route-id="@Model.ForumId">Back to @Model.Forum.Name</a>
+    </p>
+}
+else if (User.Identity.IsAuthenticated)
+{
+    <p>
+        <a asp-action="Create" asp-controller="ForumMessages" asp-route-topicId="@Model.Id">Reply</a>
+        | <a asp-action="Details" asp-controller="Forums" asp-route-id="@Model.ForumId">Back to @Model.Forum.Name</a>
+    </p>
+}
+
+@if (Model.Messages != null)
+{
+    foreach (var message in Model.Messages.OrderByDescending(m => m.Modified))
+    {
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                @{
+                    var edited = message.Modified == message.Created ? "" : $"(edited {message.Modified.ToString("dddd, MMMM d, yyyy h:mm:ss tt")})";
+                    var canEditMessage = userPermissions.CanEditForumMessage(message);
+                }
+                @if (canEditMessage)
+                {
+                    <div>
+                        @message.Creator.UserName, @message.Created.ToString("dddd, MMMM d, yyyy h:mm:ss tt") @edited
+                        | <a asp-action="Edit" asp-controller="ForumMessages" asp-route-id="@message.Id">Edit</a>
+                        | <a asp-action="Delete" asp-controller="ForumMessages" asp-route-id="@message.Id">Delete</a>
+                        | <a asp-action="Create" asp-controller="ForumMessageAttachments" asp-route-messageId="@message.Id">Attach</a>
+                    </div>
+                }
+                else
+                {
+                    <div>@message.Creator.UserName, @message.Created.ToString("dddd, MMMM d, yyyy h:mm:ss tt") @edited</div>
+                }
+
+            </div>
+            <div class="panel-body">
+                <div class="forum-message-text">@message.Text</div>
+                @if (message.MessageAttachments != null)
+                {
+                    foreach (var attachment in message.MessageAttachments)
+                    {
+                        <div class="row">
+                            <div class="col-sm-6 col-md-4">
+                                <div class="thumbnail">
+                                    <img src="@attachment.FilePath" alt="Attachment" />
+                                </div>
+                                @if (canEditMessage)
+                                {
+                                    <div class="caption">
+                                        <p>
+                                            <a asp-action="Delete" asp-controller="ForumMessageAttachments" asp-route-id="@attachment.Id" class="btn btn-sm btn-danger">
+                                                Delete
+                                            </a>
+                                        </p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+}

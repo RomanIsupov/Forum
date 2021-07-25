@@ -1,0 +1,84 @@
+﻿@model IEnumerable<Backend6.Models.ForumCategory>
+@using Backend6.Services
+@inject IUserPermissionsService UserPermissions
+
+@{
+    ViewData["Title"] = "Index";
+    var isAdmin = User.IsInRole(ApplicationRoles.Administrators);
+    var verticalBar = "|";
+}
+<h2>Forum</h2>
+
+@foreach (var item in Model.OrderBy(x => x.Name))
+{
+<div class="panel panel-default forum-category">
+    @if (isAdmin)
+    {
+        <div class="panel-heading">
+            <strong>@item.Name</strong>
+            @verticalBar <a asp-action="Edit" asp-controller="ForumCategories" asp-route-id="@item.Id">Edit</a>
+            @verticalBar <a asp-action="Delete" asp-controller="ForumCategories" asp-route-id="@item.Id">Delete</a>
+            @verticalBar <a asp-action="Create" asp-controller="Forums" asp-route-categoryId="@item.Id">Create Forum</a>
+        </div>
+    }
+    else
+    {
+        <div class="panel-heading">
+            <strong>@item.Name</strong>
+        </div>
+    }
+
+    <table class="table table-striped">
+        <tbody>
+            @if (item.Forums != null)
+            {
+                foreach (var forumItem in item.Forums.OrderBy(x => x.Name))
+                {
+                    String topicOrTopics;
+                    Int32 amountOfTopics;
+                    @if (forumItem.Topics == null)
+                    {
+                        topicOrTopics = "topics";
+                        amountOfTopics = 0;
+                    }
+                    else
+                    {
+                        amountOfTopics = forumItem.Topics.Count();
+                        topicOrTopics = amountOfTopics == 1 ? "topic" : "topics";
+                    }
+                    <tr>
+                        <td>
+                            @if (isAdmin)
+                            {
+                                <a class="forum-name" asp-action="Details" asp-controller="Forums" asp-route-id="@forumItem.Id">
+                                    @forumItem.Name
+                                </a>
+                                @verticalBar <a asp-action="Edit" asp-controller="Forums" asp-route-id="@forumItem.Id">Edit</a>
+                                @verticalBar <a asp-action="Delete" asp-controller="Forums" asp-route-id="@forumItem.Id">Delete</a>
+                                <p>@forumItem.Description</p>
+                            }
+                            else
+                            {
+                                <a class="forum-name" asp-action="Details" asp-controller="Forums" asp-route-id="@forumItem.Id">
+                                    @forumItem.Name
+                                </a>
+                                <p>@forumItem.Description</p>
+                            }
+                        </td>
+                    </tr>
+                }
+                
+            }
+        </tbody>
+    </table>
+</div>
+}
+
+@if (isAdmin)
+{
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <a asp-action="Create" asp-controller="ForumCategories">Create new category</a>
+        </div>
+    </div>
+}
